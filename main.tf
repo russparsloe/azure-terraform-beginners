@@ -110,6 +110,14 @@ resource "azurerm_public_ip" "tf-guide-pip" {
   domain_name_label            = "${var.hostname}"
 }
 
+
+data "template_file" "setup" {
+  template = "${file("${path.module}/files/setup_with_vault.tpl")}"
+
+  vars = {
+    vault_address = "${var.vault_address}"
+  }
+}
 # And finally we build our virtual machine. This is a standard Ubuntu instance.
 # We use the shell provisioner to run a Bash script that configures Apache for 
 # the demo environment. Terraform supports several different types of 
@@ -141,6 +149,7 @@ resource "azurerm_virtual_machine" "site" {
     computer_name  = "${var.hostname}"
     admin_username = "${var.admin_username}"
     admin_password = "${var.admin_password}"
+    custom_data    = "${data.template_file.setup.rendered}"
   }
 
   os_profile_linux_config {
@@ -148,32 +157,32 @@ resource "azurerm_virtual_machine" "site" {
   }
 
   # It's easy to transfer files or templates using Terraform.
-  provisioner "file" {
-    source      = "files/setup.sh"
-    destination = "/home/${var.admin_username}/setup.sh"
+  # provisioner "file" {
+  #   source      = "files/setup.sh"
+  #   destination = "/home/${var.admin_username}/setup.sh"
 
-    connection {
-      type     = "ssh"
-      user     = "${var.admin_username}"
-      password = "${var.admin_password}"
-      host     = "${azurerm_public_ip.tf-guide-pip.fqdn}"
-    }
-  }
+  #   connection {
+  #     type     = "ssh"
+  #     user     = "${var.admin_username}"
+  #     password = "${var.admin_password}"
+  #     host     = "${azurerm_public_ip.tf-guide-pip.fqdn}"
+  #   }
+  # }
 
   # This shell script starts our Apache server and prepares the demo environment.
-  provisioner "remote-exec" {
-    inline = [
-      "chmod +x /home/${var.admin_username}/setup.sh",
-      "sudo /home/${var.admin_username}/setup.sh",
-    ]
+  # provisioner "remote-exec" {
+  #   inline = [
+  #     "chmod +x /home/${var.admin_username}/setup.sh",
+  #     "sudo /home/${var.admin_username}/setup.sh",
+  #   ]
 
-    connection {
-      type     = "ssh"
-      user     = "${var.admin_username}"
-      password = "${var.admin_password}"
-      host     = "${azurerm_public_ip.tf-guide-pip.fqdn}"
-    }
-  }
+  #   connection {
+  #     type     = "ssh"
+  #     user     = "${var.admin_username}"
+  #     password = "${var.admin_password}"
+  #     host     = "${azurerm_public_ip.tf-guide-pip.fqdn}"
+  #   }
+  # }
 }
 
 ##############################################################################
