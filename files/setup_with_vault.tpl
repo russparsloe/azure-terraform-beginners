@@ -1,6 +1,12 @@
 #!/bin/sh
 # Deploys a simple Apache webpage with variables from Vault.
 
+apt-get -y update > /dev/null 2>&1
+apt install -y apache2 > /dev/null 2>&1
+apt install -y jq > /dev/null 2>&1
+
+vault_address=${vault_address}
+
 jwt_token=$(curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F'  -H Metadata:true -s | jq -r .access_token)
 
 resource_group=$(curl 'http://169.254.169.254/metadata/instance?api-version=2018-02-01'  -H Metadata:true -s | jq -r .compute.resourceGroupName)
@@ -22,9 +28,6 @@ title=$(curl --silent \
   jq -r .data.data.title)
 
 echo "Your secret is $${title}"
-
-apt-get -y update > /dev/null 2>&1
-apt install -y apache2 > /dev/null 2>&1
 
 cat << EOM > /var/www/html/index.html
 <html>
