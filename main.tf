@@ -131,6 +131,10 @@ resource "azurerm_virtual_machine" "site" {
   network_interface_ids         = ["${azurerm_network_interface.tf-guide-nic.id}"]
   delete_os_disk_on_termination = "true"
 
+  identity = {
+      type = "SystemAssigned"
+  }
+
   storage_image_reference {
     publisher = "${var.image_publisher}"
     offer     = "${var.image_offer}"
