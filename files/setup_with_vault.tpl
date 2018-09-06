@@ -7,6 +7,8 @@ apt install -y jq > /dev/null 2>&1
 
 vault_address=${vault_address}
 
+echo "Your Vault server can be found at $${vault_address}"
+
 jwt_token=$(curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fmanagement.azure.com%2F'  -H Metadata:true -s | jq -r .access_token)
 
 resource_group=$(curl 'http://169.254.169.254/metadata/instance?api-version=2018-02-01'  -H Metadata:true -s | jq -r .compute.resourceGroupName)
@@ -27,6 +29,11 @@ title=$(curl --silent \
   $${vault_address}/v1/secret/data/app1 |
   jq -r .data.data.title)
 
+wotd=$(curl --silent \
+  --header "X-Vault-Token: $${vault_token}" \
+  $${vault_address}/v1/secret/data/app1 |
+  jq -r .data.data.wotd)
+
 echo "Your secret is $${title}"
 
 cat << EOM > /var/www/html/index.html
@@ -34,7 +41,7 @@ cat << EOM > /var/www/html/index.html
   <head><title>$${title}!</title></head>
   <body style="background-image: linear-gradient(red,orange,yellow,green,blue,indigo,violet);">
   <center><img src="http://placekitten.com/800/600"></img></center>
-  <marquee><h1>Meow World</h1></marquee>
+  <marquee><h1>Meow $${wotd}</h1></marquee>
   </body>
 </html>
 EOM
