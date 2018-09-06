@@ -84,3 +84,5 @@ variable "admin_password" {
   description = "Administrator password"
   default     = "Adminpassword123!"
 }
+
+variable "vault_address" {}
