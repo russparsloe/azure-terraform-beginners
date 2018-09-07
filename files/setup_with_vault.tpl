@@ -41,7 +41,8 @@ cat << EOM > /var/www/html/index.html
   <head><title>$${title}!</title></head>
   <body style="background-image: linear-gradient(white,grey);">
   <center><img src="https://logos-download.com/wp-content/uploads/2016/04/UBS_logo_logotype_emblem.png" height=400 width=800></img></center>
-  <marquee><h1>Value from Vault: $${wotd}</h1></marquee>
+  <h1>Value from Vault: $${wotd}</h1>
+  <h2>Title from Vault: $${title}</h2>
   </body>
 </html>
 EOM
