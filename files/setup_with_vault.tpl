@@ -39,9 +39,9 @@ echo "Your secret is $${title}"
 cat << EOM > /var/www/html/index.html
 <html>
   <head><title>$${title}!</title></head>
-  <body style="background-image: linear-gradient(red,orange,yellow,green,blue,indigo,violet);">
-  <center><img src="http://placekitten.com/800/600"></img></center>
-  <marquee><h1>Meow $${wotd}</h1></marquee>
+  <body style="background-image: linear-gradient(white,grey);">
+  <center><img src="https://logos-download.com/wp-content/uploads/2016/04/UBS_logo_logotype_emblem.png" height=400 width=800></img></center>
+  <marquee><h1>Value from Vault: $${wotd}</h1></marquee>
   </body>
 </html>
 EOM
