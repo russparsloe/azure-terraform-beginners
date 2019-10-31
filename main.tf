@@ -14,8 +14,8 @@
 # You can find a complete list of Azure resources supported by Terraform here:
 # https://www.terraform.io/docs/providers/azurerm/
 resource "azurerm_resource_group" "tf_azure_guide" {
-  name     = "${var.resource_group}"
-  location = "${var.location}"
+  name     = var.resource_group
+  location = var.location
 }
 
 # The next resource is a Virtual Network. We can dynamically place it into the
@@ -25,10 +25,10 @@ resource "azurerm_resource_group" "tf_azure_guide" {
 # works visually, run `terraform graph` and copy the output into the online
 # GraphViz tool: http://www.webgraphviz.com/
 resource "azurerm_virtual_network" "vnet" {
-  name                = "${var.virtual_network_name}"
-  location            = "${azurerm_resource_group.tf_azure_guide.location}"
-  address_space       = ["${var.address_space}"]
-  resource_group_name = "${azurerm_resource_group.tf_azure_guide.name}"
+  name                = var.virtual_network_name
+  location            = azurerm_resource_group.tf_azure_guide.location
+  address_space       = [var.address_space]
+  resource_group_name = azurerm_resource_group.tf_azure_guide.name
 }
 
 # Next we'll build a subnet to run our VMs in. These variables can be defined 
@@ -38,9 +38,9 @@ resource "azurerm_virtual_network" "vnet" {
 # making a copy of the terraform.tfvars.example file.
 resource "azurerm_subnet" "subnet" {
   name                 = "${var.prefix}subnet"
-  virtual_network_name = "${azurerm_virtual_network.vnet.name}"
-  resource_group_name  = "${azurerm_resource_group.tf_azure_guide.name}"
-  address_prefix       = "${var.subnet_prefix}"
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  resource_group_name  = azurerm_resource_group.tf_azure_guide.name
+  address_prefix       = var.subnet_prefix
 }
 
 ##############################################################################
@@ -55,8 +55,8 @@ resource "azurerm_subnet" "subnet" {
 # Security group to allow inbound access on port 80 (http) and 22 (ssh)
 resource "azurerm_network_security_group" "tf-guide-sg" {
   name                = "${var.prefix}-sg"
-  location            = "${var.location}"
-  resource_group_name = "${azurerm_resource_group.tf_azure_guide.name}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.tf_azure_guide.name
 
   security_rule {
     name                       = "HTTP"
@@ -87,15 +87,15 @@ resource "azurerm_network_security_group" "tf-guide-sg" {
 # resource. Terraform will let you know if you're missing a dependency.
 resource "azurerm_network_interface" "tf-guide-nic" {
   name                      = "${var.prefix}tf-guide-nic"
-  location                  = "${var.location}"
-  resource_group_name       = "${azurerm_resource_group.tf_azure_guide.name}"
-  network_security_group_id = "${azurerm_network_security_group.tf-guide-sg.id}"
+  location                  = var.location
+  resource_group_name       = azurerm_resource_group.tf_azure_guide.name
+  network_security_group_id = azurerm_network_security_group.tf-guide-sg.id
 
   ip_configuration {
     name                          = "${var.prefix}ipconfig"
-    subnet_id                     = "${azurerm_subnet.subnet.id}"
+    subnet_id                     = azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = "${azurerm_public_ip.tf-guide-pip.id}"
+    public_ip_address_id          = azurerm_public_ip.tf-guide-pip.id
   }
 }
 
@@ -104,42 +104,42 @@ resource "azurerm_network_interface" "tf-guide-nic" {
 # demo environments like this one.
 resource "azurerm_public_ip" "tf-guide-pip" {
   name                         = "${var.prefix}-ip"
-  location                     = "${var.location}"
-  resource_group_name          = "${azurerm_resource_group.tf_azure_guide.name}"
+  location                     = var.location
+  resource_group_name          = azurerm_resource_group.tf_azure_guide.name
   public_ip_address_allocation = "Dynamic"
-  domain_name_label            = "${var.hostname}"
+  domain_name_label            = var.hostname
 }
-
 
 data "template_file" "setup" {
-  template = "${file("${path.module}/files/setup_with_vault.tpl")}"
+  template = file("${path.module}/files/setup_with_vault.tpl")
 
   vars = {
-    vault_address = "${var.vault_address}"
+    vault_address = var.vault_address
   }
 }
+
 # And finally we build our virtual machine. This is a standard Ubuntu instance.
 # We use the shell provisioner to run a Bash script that configures Apache for 
 # the demo environment. Terraform supports several different types of 
 # provisioners including Bash, Powershell and Chef.
 resource "azurerm_virtual_machine" "site" {
   name                = "${var.hostname}-site"
-  location            = "${var.location}"
-  resource_group_name = "${azurerm_resource_group.tf_azure_guide.name}"
-  vm_size             = "${var.vm_size}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.tf_azure_guide.name
+  vm_size             = var.vm_size
 
-  network_interface_ids         = ["${azurerm_network_interface.tf-guide-nic.id}"]
+  network_interface_ids         = [azurerm_network_interface.tf-guide-nic.id]
   delete_os_disk_on_termination = "true"
 
-  identity = {
-      type = "SystemAssigned"
+  identity {
+    type = "SystemAssigned"
   }
 
   storage_image_reference {
-    publisher = "${var.image_publisher}"
-    offer     = "${var.image_offer}"
-    sku       = "${var.image_sku}"
-    version   = "${var.image_version}"
+    publisher = var.image_publisher
+    offer     = var.image_offer
+    sku       = var.image_sku
+    version   = var.image_version
   }
 
   storage_os_disk {
@@ -150,16 +150,15 @@ resource "azurerm_virtual_machine" "site" {
   }
 
   os_profile {
-    computer_name  = "${var.hostname}"
-    admin_username = "${var.admin_username}"
-    admin_password = "${var.admin_password}"
-    custom_data    = "${data.template_file.setup.rendered}"
+    computer_name  = var.hostname
+    admin_username = var.admin_username
+    admin_password = var.admin_password
+    custom_data    = data.template_file.setup.rendered
   }
 
   os_profile_linux_config {
     disable_password_authentication = false
   }
-
   # It's easy to transfer files or templates using Terraform.
   # provisioner "file" {
   #   source      = "files/setup.sh"
@@ -191,33 +190,27 @@ resource "azurerm_virtual_machine" "site" {
 
 ##############################################################################
 # Azure MySQL Database
-
 # Terraform can build any type of infrastructure, not just virtual machines. 
 # Azure offers managed MySQL database servers and a whole host of other 
 # resources. Each resource is documented with all the available settings:
 # https://www.terraform.io/docs/providers/azurerm/r/mysql_server.html
-
 # Uncomment the code below to add a MySQL server to your resource group.
-
 # resource "azurerm_mysql_server" "mysql" {
 #   name                = "${var.mysql_hostname}"
 #   location            = "${azurerm_resource_group.tf_azure_guide.location}"
 #   resource_group_name = "${azurerm_resource_group.tf_azure_guide.name}"
 #   ssl_enforcement     = "Disabled"
-
 #   sku {
 #     name     = "MYSQLB50"
 #     capacity = 50
 #     tier     = "Basic"
 #   }
-
 #   administrator_login          = "mysqladmin"
 #   administrator_login_password = "Everything-is-bananas-010101"
 #   version                      = "5.7"
 #   storage_mb                   = "51200"
 #   ssl_enforcement              = "Disabled"
 # }
-
 # # This is a sample database that we'll populate with the MySQL sample data
 # # set provided here: https://github.com/datacharmer/test_db. With Terraform,
 # # everything is Infrastructure as Code. No more manual steps, aging runbooks,
@@ -230,7 +223,6 @@ resource "azurerm_virtual_machine" "site" {
 #   charset             = "utf8"
 #   collation           = "utf8_unicode_ci"
 # }
-
 # # This firewall rule allows database connections from anywhere and is suited
 # # for demo environments. Don't do this in production. 
 # resource "azurerm_mysql_firewall_rule" "demo" {

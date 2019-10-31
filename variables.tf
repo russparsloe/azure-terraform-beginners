@@ -85,4 +85,6 @@ variable "admin_password" {
   default     = "Adminpassword123!"
 }
 
-variable "vault_address" {}
+variable "vault_address" {
+}
+
